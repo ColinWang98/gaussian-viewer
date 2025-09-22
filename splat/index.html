@@ -285,8 +285,12 @@ window.addEventListener('message', async (e) => {
     const file = new File([bytes], data.name || 'model.ply', { type: data.mime || 'application/octet-stream' });
     const dt = new DataTransfer();
     dt.items.add(file);
-    const dropEvent = new DragEvent('drop', { dataTransfer: dt });
-    document.dispatchEvent(dropEvent);
+    const target = document.getElementById('canvas') || document;
+    // 依次派发 dragenter/dragover/drop，更贴近真实拖拽
+    ['dragenter','dragover','drop'].forEach(type => {
+      const ev = new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true });
+      target.dispatchEvent(ev);
+    });
   } catch (err) {
     console.error('接收父页面文件失败', err);
   }
