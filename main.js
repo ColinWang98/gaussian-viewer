@@ -12,6 +12,16 @@ const spzInput = document.getElementById('spzInput');
 const gridToggle = document.getElementById('gridToggle');
 const resetViewBtn = document.getElementById('resetViewBtn');
 const statusEl = document.getElementById('status');
+// 提前初始化留言板所需的 DOM 与状态，避免 TDZ 错误
+const STORAGE_KEY = 'gs_viewer_messages_v1';
+const MAX_MESSAGES = 10;
+const msgForm = document.getElementById('msgForm');
+const nicknameInput = document.getElementById('nickname');
+const messageInput = document.getElementById('message');
+const danmakuRoot = document.getElementById('danmaku');
+let laneCount = 6; // 车道数量
+let laneHeights = [];
+let activeItems = [];
 const loadSampleBtn = document.getElementById('loadSampleBtn');
 
 let renderer, scene, camera, controls, grid;
@@ -240,16 +250,6 @@ window.addEventListener('unhandledrejection', (e) => {
 });
 
 // ------------------------- 留言板与弹幕 -------------------------
-const STORAGE_KEY = 'gs_viewer_messages_v1';
-const MAX_MESSAGES = 10;
-const msgForm = document.getElementById('msgForm');
-const nicknameInput = document.getElementById('nickname');
-const messageInput = document.getElementById('message');
-const danmakuRoot = document.getElementById('danmaku');
-
-let laneCount = 6; // 车道数量
-let laneHeights = [];
-let activeItems = [];
 
 function initMessageBoard() {
     msgForm.addEventListener('submit', onSubmitMessage);
