@@ -12,8 +12,8 @@
             <div class="left">
                 <h1>Gaussian Splat Viewer</h1>
                 <label class="file-picker">
-                    <input id="spzInput" type="file" accept=".spz" />
-                    <span>选择本地 .spz 文件</span>
+                    <input id="spzInput" type="file" accept=".spz,.splat,.ply" />
+                    <span>选择本地 .splat / .ply / .spz 文件</span>
                 </label>
             </div>
             <div class="right">
@@ -29,6 +29,7 @@
 
         <main class="main">
             <div id="threeContainer" class="three-container"></div>
+            <iframe id="splatFrame" style="position:absolute;inset:0;border:0;display:none;"></iframe>
             <div id="danmaku" class="danmaku"></div>
         </main>
 
@@ -53,8 +54,8 @@
     <noscript>需要启用 JavaScript 才能使用本页面。</noscript>
     <!-- 参考：Luma Web Examples @ https://github.com/lumalabs/luma-web-examples -->
     <!-- 使用方式：
-         1) 顶部选择本地 .spz 文件，或直接将 .spz 拖拽到画面加载；
-         2) 也可在使用本地服务器时，通过 URL ?src=相对路径 或 http(s) 链接自动加载（无法直接读取 C:\... 绝对路径）。
+         1) 顶部选择本地 .splat/.ply（使用通用 Splat 引擎）或 .spz（Luma 引擎）；
+         2) 也可通过 URL ?src= 相对路径/http(s) 链接自动加载（仅 .spz/Luma）。
          交互：左键旋转、滚轮缩放、右键平移、点击“重置视角”。 -->
 </body>
 <script>

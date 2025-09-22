@@ -12,6 +12,7 @@ const spzInput = document.getElementById('spzInput');
 const gridToggle = document.getElementById('gridToggle');
 const resetViewBtn = document.getElementById('resetViewBtn');
 const statusEl = document.getElementById('status');
+const splatFrame = document.getElementById('splatFrame');
 // 提前初始化留言板所需的 DOM 与状态，避免 TDZ 错误
 const STORAGE_KEY = 'gs_viewer_messages_v1';
 const MAX_MESSAGES = 10;
@@ -115,9 +116,18 @@ function init() {
         const files = e.dataTransfer && e.dataTransfer.files;
         if (!files || !files.length) return;
         const file = files[0];
-        if (!file.name.toLowerCase().endsWith('.spz')) { alert('请拖拽 .spz 文件'); return; }
-        setStatus('从拖拽文件加载中…');
-        loadSpzFromBlob(file);
+        const name = file.name.toLowerCase();
+        if (name.endsWith('.splat') || name.endsWith('.ply')) {
+            setStatus('从拖拽 .splat/.ply 加载中…');
+            loadSplatInIframe(file);
+            return;
+        }
+        if (name.endsWith('.spz')) {
+            setStatus('从拖拽 .spz 加载中…');
+            loadSpzFromBlob(file);
+            return;
+        }
+        alert('请拖拽 .splat / .ply / .spz 文件');
     });
 
     // 初始化完成标记，供外部自检
@@ -204,13 +214,18 @@ function tryFitViewToSplats() {
 function onFilePicked(e) {
     const file = e.target.files && e.target.files[0];
     if (!file) return;
-    const isSpz = file.name.toLowerCase().endsWith('.spz');
-    if (!isSpz) {
-        alert('请选择 .spz 文件');
+    const name = file.name.toLowerCase();
+    if (name.endsWith('.splat') || name.endsWith('.ply')) {
+        setStatus('从选择的 .splat/.ply 加载中…');
+        loadSplatInIframe(file);
         return;
     }
-    setStatus('从选择文件加载中…');
-    loadSpzFromBlob(file);
+    if (name.endsWith('.spz')) {
+        setStatus('从选择的 .spz 加载中…');
+        loadSpzFromBlob(file);
+        return;
+    }
+    alert('请选择 .splat / .ply / .spz 文件');
 }
 
 function resetView() {
@@ -248,6 +263,25 @@ window.addEventListener('unhandledrejection', (e) => {
     try { setStatus('脚本未处理的异常'); } catch {}
     console.error('未处理的 Promise 拒绝', e.reason || e);
 });
+
+// ------------------------- 通用 Splat 引擎（antimatter15/splat） -------------------------
+function loadSplatInIframe(file) {
+    try {
+        const url = URL.createObjectURL(file);
+        // 切换到 iframe 渲染
+        if (splatFrame) {
+            splatFrame.style.display = 'block';
+            splatFrame.src = `./splat/index.html?url=${encodeURIComponent(url)}`;
+        }
+        // 隐藏 three.js 容器（Luma 引擎）
+        if (container) container.style.display = 'none';
+        setStatus('加载完成（通用引擎）');
+    } catch (err) {
+        console.error('加载 .splat/.ply 失败：', err);
+        setStatus('加载失败');
+        alert('加载 .splat/.ply 失败，请确认文件是否有效');
+    }
+}
 
 // ------------------------- 留言板与弹幕 -------------------------
 
