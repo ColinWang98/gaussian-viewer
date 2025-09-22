@@ -1424,6 +1424,16 @@ async function main() {
         }
     };
 
+    // 直接从父页面注入的 ArrayBuffer 加载（无需拖拽）
+    window.loadSplatFromArrayBuffer = (name, buffer) => {
+        try {
+            const file = new File([new Uint8Array(buffer)], name || 'model.ply', { type: 'application/octet-stream' });
+            selectFile(file);
+        } catch (e) {
+            console.error('loadSplatFromArrayBuffer 失败', e);
+        }
+    };
+
     window.addEventListener("hashchange", (e) => {
         try {
             viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1)));

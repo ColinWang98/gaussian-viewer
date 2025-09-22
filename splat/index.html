@@ -280,17 +280,9 @@ window.addEventListener('message', async (e) => {
   try {
     const data = e.data || {};
     if (data.type !== 'splat-load-file' || !data.buffer) return;
-    const bytes = new Uint8Array(data.buffer);
-    // 构造 File 并模拟一个拖拽事件以复用页面原有逻辑
-    const file = new File([bytes], data.name || 'model.ply', { type: data.mime || 'application/octet-stream' });
-    const dt = new DataTransfer();
-    dt.items.add(file);
-    const target = document.getElementById('canvas') || document;
-    // 依次派发 dragenter/dragover/drop，更贴近真实拖拽
-    ['dragenter','dragover','drop'].forEach(type => {
-      const ev = new DragEvent(type, { dataTransfer: dt, bubbles: true, cancelable: true });
-      target.dispatchEvent(ev);
-    });
+    if (window.loadSplatFromArrayBuffer) {
+      window.loadSplatFromArrayBuffer(data.name || 'model.ply', data.buffer);
+    }
   } catch (err) {
     console.error('接收父页面文件失败', err);
   }
