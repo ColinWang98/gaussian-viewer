@@ -274,4 +274,22 @@ other
 		</div>
 		<script src="main.js"></script>
 	</body>
+<script>
+// 接收父页面 postMessage 的 .ply/.splat 二进制并加载
+window.addEventListener('message', async (e) => {
+  try {
+    const data = e.data || {};
+    if (data.type !== 'splat-load-file' || !data.buffer) return;
+    const bytes = new Uint8Array(data.buffer);
+    // 构造 File 并模拟一个拖拽事件以复用页面原有逻辑
+    const file = new File([bytes], data.name || 'model.ply', { type: data.mime || 'application/octet-stream' });
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    const dropEvent = new DragEvent('drop', { dataTransfer: dt });
+    document.dispatchEvent(dropEvent);
+  } catch (err) {
+    console.error('接收父页面文件失败', err);
+  }
+});
+</script>
 </html>

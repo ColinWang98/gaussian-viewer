@@ -267,15 +267,36 @@ window.addEventListener('unhandledrejection', (e) => {
 // ------------------------- 通用 Splat 引擎（antimatter15/splat） -------------------------
 function loadSplatInIframe(file) {
     try {
-        const url = URL.createObjectURL(file);
+        const name = file.name.toLowerCase();
         // 切换到 iframe 渲染
         if (splatFrame) {
             splatFrame.style.display = 'block';
-            splatFrame.src = `./splat/index.html?url=${encodeURIComponent(url)}`;
+            // .splat 直接用 URL 参数；.ply 等待 load 后用 postMessage 传二进制
+            if (name.endsWith('.splat')) {
+                const url = URL.createObjectURL(file);
+                splatFrame.src = `./splat/index.html?url=${encodeURIComponent(url)}`;
+                setStatus('加载完成（通用引擎）');
+            } else {
+                splatFrame.src = `./splat/index.html`;
+                splatFrame.onload = async () => {
+                    try {
+                        const buffer = await file.arrayBuffer();
+                        splatFrame.contentWindow.postMessage({
+                            type: 'splat-load-file',
+                            name: file.name,
+                            mime: file.type || 'application/octet-stream',
+                            buffer
+                        }, '*');
+                        setStatus('加载完成（通用引擎）');
+                    } catch (e) {
+                        console.error('postMessage 发送失败', e);
+                        setStatus('加载失败');
+                    }
+                };
+            }
         }
         // 隐藏 three.js 容器（Luma 引擎）
         if (container) container.style.display = 'none';
-        setStatus('加载完成（通用引擎）');
     } catch (err) {
         console.error('加载 .splat/.ply 失败：', err);
         setStatus('加载失败');
