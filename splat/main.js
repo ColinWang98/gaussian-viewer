@@ -761,10 +761,19 @@ async function main() {
         console.log(req);
         if (req.status != 200)
             throw new Error(req.status + " Unable to load " + req.url);
-        reader = req.body.getReader();
-        splatData = new Uint8Array(req.headers.get("content-length"));
-        downsample = splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
-        console.log(splatData.length / rowLength, downsample);
+        const lenHeader = req.headers.get("content-length");
+        if (lenHeader) {
+            reader = req.body.getReader();
+            splatData = new Uint8Array(lenHeader);
+            downsample = splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
+            console.log(splatData.length / rowLength, downsample);
+        } else {
+            // blob: 或 data: 等无 content-length 的情况，直接整包读取
+            const buf = await req.arrayBuffer();
+            splatData = new Uint8Array(buf);
+            downsample = splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
+            console.log('blob length', splatData.length / rowLength, downsample);
+        }
     } else {
         // 无 URL 参数：等待父页面注入或用户拖拽文件
         splatData = new Uint8Array(0);
@@ -1482,14 +1491,14 @@ async function main() {
             lastVertexCount = vertexCount;
         }
     }
-    if (reader && !stopLoading) {
+    if ((!reader && splatData && splatData.length) || (reader && !stopLoading)) {
         if (isPly(splatData)) {
             // ply file magic header means it should be handled differently
             worker.postMessage({ ply: splatData.buffer, save: false });
         } else {
             worker.postMessage({
                 buffer: splatData.buffer,
-                vertexCount: Math.floor(bytesRead / rowLength),
+                vertexCount: reader ? Math.floor(bytesRead / rowLength) : Math.floor(splatData.length / rowLength),
             });
         }
     }
