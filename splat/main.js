@@ -743,27 +743,34 @@ async function main() {
         viewMatrix = JSON.parse(decodeURIComponent(location.hash.slice(1)));
         carousel = false;
     } catch (err) {}
-    const url = new URL(
-        // "nike.splat",
-        // location.href,
-        params.get("url") || "train.splat",
-        "https://huggingface.co/cakewalk/splat-data/resolve/main/",
-    );
-    const req = await fetch(url, {
-        mode: "cors", // no-cors, *cors, same-origin
-        credentials: "omit", // include, *same-origin, omit
-    });
-    console.log(req);
-    if (req.status != 200)
-        throw new Error(req.status + " Unable to load " + req.url);
-
+    const urlParam = params.get("url");
     const rowLength = 3 * 4 + 3 * 4 + 4 + 4;
-    const reader = req.body.getReader();
-    let splatData = new Uint8Array(req.headers.get("content-length"));
+    let reader = null;
+    let splatData;
+    let downsample = 1 / devicePixelRatio;
 
-    const downsample =
-        splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
-    console.log(splatData.length / rowLength, downsample);
+    if (urlParam) {
+        const url = new URL(
+            urlParam,
+            "https://huggingface.co/cakewalk/splat-data/resolve/main/",
+        );
+        const req = await fetch(url, {
+            mode: "cors",
+            credentials: "omit",
+        });
+        console.log(req);
+        if (req.status != 200)
+            throw new Error(req.status + " Unable to load " + req.url);
+        reader = req.body.getReader();
+        splatData = new Uint8Array(req.headers.get("content-length"));
+        downsample = splatData.length / rowLength > 500000 ? 1 : 1 / devicePixelRatio;
+        console.log(splatData.length / rowLength, downsample);
+    } else {
+        // 无 URL 参数：等待父页面注入或用户拖拽文件
+        splatData = new Uint8Array(0);
+        carousel = false;
+        console.log('Waiting for injected file or drag-and-drop...');
+    }
 
     const worker = new Worker(
         URL.createObjectURL(
@@ -1458,7 +1465,7 @@ async function main() {
     let lastVertexCount = -1;
     let stopLoading = false;
 
-    while (true) {
+    if (reader) while (true) {
         const { done, value } = await reader.read();
         if (done || stopLoading) break;
 
@@ -1475,7 +1482,7 @@ async function main() {
             lastVertexCount = vertexCount;
         }
     }
-    if (!stopLoading) {
+    if (reader && !stopLoading) {
         if (isPly(splatData)) {
             // ply file magic header means it should be handled differently
             worker.postMessage({ ply: splatData.buffer, save: false });
