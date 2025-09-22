@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>本地高斯场景浏览器 + 弹幕留言</title>
+    <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+    <div id="app">
+        <header class="topbar">
+            <div class="left">
+                <h1>Gaussian Splat Viewer</h1>
+                <label class="file-picker">
+                    <input id="spzInput" type="file" accept=".spz" />
+                    <span>选择本地 .spz 文件</span>
+                </label>
+            </div>
+            <div class="right">
+                <span id="status" class="status">待机</span>
+                <button id="loadSampleBtn" title="加载在线示例">加载示例</button>
+                <button id="resetViewBtn" title="重置视角">重置视角</button>
+                <label class="toggle">
+                    <input id="gridToggle" type="checkbox" checked>
+                    <span>网格</span>
+                </label>
+            </div>
+        </header>
+
+        <main class="main">
+            <div id="threeContainer" class="three-container"></div>
+            <div id="danmaku" class="danmaku"></div>
+        </main>
+
+        <footer class="footer">
+            <form id="msgForm" class="msg-form">
+                <input id="nickname" type="text" placeholder="昵称（可选）" maxlength="20">
+                <input id="message" type="text" placeholder="留言内容（按 Enter 发送）" maxlength="80" required>
+                <button type="submit">发送</button>
+                <span class="hint">仅保留最近 10 条，以上屏弹幕滚动显示</span>
+            </form>
+        </footer>
+    </div>
+
+    <script type="module" src="./main.js"></script>
+    <noscript>需要启用 JavaScript 才能使用本页面。</noscript>
+    <!-- 参考：Luma Web Examples @ https://github.com/lumalabs/luma-web-examples -->
+    <!-- 使用方式：
+         1) 顶部选择本地 .spz 文件，或直接将 .spz 拖拽到画面加载；
+         2) 也可在使用本地服务器时，通过 URL ?src=相对路径 或 http(s) 链接自动加载（无法直接读取 C:\... 绝对路径）。
+         交互：左键旋转、滚轮缩放、右键平移、点击“重置视角”。 -->
+</body>
+<script>
+// 防止 Windows 触摸板双指回弹导致滚动穿透
+document.addEventListener('wheel', (e) => {
+    if ((e.target.closest && e.target.closest('#threeContainer')) || e.target.id === 'threeContainer') {
+        e.preventDefault();
+    }
+}, { passive: false });
+
+// 主脚本加载自检：若 1.5 秒后仍未设置 __gsInitDone，则提示
+setTimeout(() => {
+    try {
+        if (!window.__gsInitDone) {
+            const el = document.getElementById('status');
+            if (el) el.textContent = '脚本未加载/网络受限';
+        }
+    } catch {}
+}, 1500);
+</script>
+</html>
+
